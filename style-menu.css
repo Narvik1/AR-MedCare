@@ -119,9 +119,9 @@ body.static-page {
 
 /* PERBAIKAN: Latar belakang fullscreen */
 body.ar-viewer-page {
-    background-color: #000; /* Fallback jika gambar gagal */
-    /* GANTI 'assets/bg.jpg' dengan path gambar Anda */
-    background-image: url('./assets/bg.jpg'); 
+    background-color: #fff; /* <-- Menggunakan putih sebagai default */
+    background-image: none; /* Hapus gambar latar belakang */
+    /* background-image: url('./assets/bg.jpg'); <-- Komen ini atau hapus */
     background-size: cover;
     background-position: center;
 }
@@ -135,19 +135,41 @@ body.ar-viewer-page canvas {
     z-index: -1; /* Kirim ke belakang */
 }
 
-/* PERBAIKAN: Tombol "Enter AR" di tengah */
+/* PERBAIKAN: Posisi HUD dan tombol AR */
 body.ar-viewer-page #hud {
+    position: fixed; /* Penting agar bisa di tengah layar */
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 250px;
+    width: auto; /* Agar pas dengan isi */
+    display: flex; /* Mengatur isi agar sejajar */
+    flex-direction: column; /* Menumpuk secara vertikal */
+    align-items: center; /* Pusatkan secara horizontal */
     justify-content: center;
+    pointer-events: none; /* Biarkan klik tembus ke canvas, kecuali untuk tombol AR */
 }
+
+/* PERBAIKAN: Sembunyikan H1 "AR Alat Medis" di fallback */
 body.ar-viewer-page #hud h1 {
-    display: none; /* Sembunyikan teks "AR Alat Medis" di fallback */
+    display: none; 
+    color: #333; /* Warna teks agar terlihat di latar putih */
+    margin-bottom: 15px; /* Sedikit spasi di bawah H1 */
+    pointer-events: auto; /* Aktifkan pointer events untuk H1 (jika ditampilkan) */
 }
+/* Tampilkan H1 saat AR aktif */
 .ar-active #hud h1 {
-    display: block; /* Tampilkan lagi saat AR aktif */
+    display: block; 
+}
+
+
+/* Styling untuk tombol AR */
+#ar-button-container {
+    /* Ini adalah div yang akan menampung tombol "Enter AR" */
+    pointer-events: auto; /* Aktifkan pointer events di sini agar tombol bisa diklik */
+    /* Tambahkan style jika Anda ingin container ini terlihat */
+    /* background: rgba(0, 0, 0, 0.3); */
+    /* padding: 10px; */
+    /* border-radius: 8px; */
 }
 
 /* PERBAIKAN: Sembunyikan tombol "Exit AR" merah bawaan */
@@ -247,3 +269,33 @@ body.ar-viewer-page .xr-btn.exit {
 }
 #asset-list-container button:hover { background: #0088ff; }
 #asset-list-container button:last-child { margin-bottom: 0; }
+/* ======================================== */
+/* === 4. STYLE UNTUK TOMBOL AR BAWAAN  === */
+/* ======================================== */
+
+/* Ini adalah style yang hilang untuk tombol "Enter AR" */
+.xr-btn {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 800;
+  letter-spacing: 0.2px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  background: #0077ff;
+  color: #fff;
+  pointer-events: auto; /* Pastikan bisa diklik */
+}
+
+.xr-btn.exit { 
+  background: #ff3333; 
+}
+
+.xr-btn:active { 
+  transform: translateY(1px); 
+}
+
+/* Ini adalah perbaikan untuk tombol "Kembali" Anda agar tidak tertutup */
+.ui-btn {
+  z-index: 10001; /* Pastikan di atas segalanya */
+}

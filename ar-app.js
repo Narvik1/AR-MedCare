@@ -99,14 +99,15 @@ function init() {
     renderer.setSize(window.innerWidth, window.innerHeight);
   });
 
-  ARButton.createButton(renderer, {
-    referenceSpaceType: 'local',
-    sessionInit: {
-      requiredFeatures: ['hit-test', 'anchors'], 
-      optionalFeatures: ['dom-overlay','local'],
-      domOverlay: { root: document.getElementById('overlayRoot') || document.body }
-    }
-  });
+// KEMBALIKAN KE VERSI ASLI INI
+ARButton.createButton(renderer, {
+  referenceSpaceType: 'local',
+  sessionInit: {
+    requiredFeatures: ['hit-test', 'anchors'], 
+    optionalFeatures: ['dom-overlay','local'],
+    domOverlay: { root: document.getElementById('overlayRoot') || document.body }
+  }
+});
 
   renderer.xr.addEventListener('sessionstart', onSessionStart);
   renderer.xr.addEventListener('sessionend', onSessionEnd);
