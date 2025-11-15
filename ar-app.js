@@ -10,28 +10,24 @@ let controller;
 let reticle;
 let hitTestSource = null, hitCancel = null;
 let xrSession = null;
-let arRoot = null; // Grup untuk menampung objek AR
+let arRoot = null; 
 let lastSpawnTs = 0;
 
 let refSpace = null;
 let lastXRFrame = null;
 let lastHit = null;
-const placed = []; // Array untuk anchor yang ditempatkan
+const placed = []; 
 
-// --- Logika Baru untuk Sidebar ---
 const loader = new GLTFLoader();
-const modelCache = {};      // Cache untuk model yang sudah di-load
-let placedAnchor = null;    // Satu anchor (jangkar) di lantai
-let currentModel = null;    // Model yang sedang ditampilkan
-let groupPlaced = false;    // Status apakah anchor sudah ditempatkan
-let modelPrefab = null;     // Model untuk fallback (Foto 2)
-// ---
+const modelCache = {};      
+let placedAnchor = null;    
+let currentModel = null;    
+let groupPlaced = false;    
+let modelPrefab = null;     
 
 // Referensi UI
 let infoPanel, infoTitle, infoDesc;
 let sidebarMenu, assetListContainer, btnAssets, btnInfoToggle, btnExitAr;
-// textureLoader dihapus dari sini
-// ---
 
 // ===== Bootstrap =====
 init();
@@ -49,11 +45,9 @@ function init() {
 
   scene = new THREE.Scene();
   
-  // --- Latar belakang sekarang di-handle oleh CSS ---
-  // Kita buat scene transparan agar CSS terlihat
+  // Latar belakang di-handle oleh CSS, buat scene transparan
   scene.background = null; 
-  renderer.setClearAlpha(0); // <-- Tambahkan ini
-  // ---
+  renderer.setClearAlpha(0); 
 
   camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 50);
   camera.position.set(0, 1.6, 0); 
@@ -64,34 +58,30 @@ function init() {
   dirLight.position.set(1, 1.5, 0.5);
   scene.add(dirLight);
 
-  // --- Muat Penlight untuk fallback (Foto 2) ---
+  // Muat Penlight untuk fallback (Foto 2)
   const modelPath = './assets/penlight-compressed.glb'; 
   loader.load(modelPath, (gltf) => {
       modelPrefab = gltf.scene;
       modelPrefab.scale.set(0.5, 0.5, 0.5); 
-      modelPrefab.position.set(0, 1, -2); // Atur posisi fallback
+      modelPrefab.position.set(0, 1, -2); 
       modelPrefab.name = 'AlatMedis_Prefab';
-      // Jangan tambahkan ke scene dulu, tambahkan di animateFallback
   }, undefined, (e) => console.error(`Gagal load ${modelPath}`, e));
-  // ---
 
   // Ambil referensi ke panel info
   infoPanel = document.getElementById('info-panel');
   infoTitle = document.getElementById('info-title');
   infoDesc = document.getElementById('info-desc');
   
-  // --- Implementasi Sidebar (FOTO 3 & 4) ---
+  // Implementasi Sidebar (FOTO 3 & 4)
   sidebarMenu = document.getElementById('sidebar-menu');
   assetListContainer = document.getElementById('asset-list-container');
   btnAssets = document.getElementById('btn-assets');
   btnInfoToggle = document.getElementById('btn-info-toggle');
   btnExitAr = document.getElementById('btn-exit-ar');
 
-  // Tambahkan event listener
   btnAssets.addEventListener('click', toggleAssetList);
   btnInfoToggle.addEventListener('click', toggleInfoPanel);
   btnExitAr.addEventListener('click', exitAR);
-  // ---
 
   window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
@@ -99,15 +89,14 @@ function init() {
     renderer.setSize(window.innerWidth, window.innerHeight);
   });
 
-// KEMBALIKAN KE VERSI ASLI INI
-ARButton.createButton(renderer, {
-  referenceSpaceType: 'local',
-  sessionInit: {
-    requiredFeatures: ['hit-test', 'anchors'], 
-    optionalFeatures: ['dom-overlay','local'],
-    domOverlay: { root: document.getElementById('overlayRoot') || document.body }
-  }
-});
+  ARButton.createButton(renderer, {
+    referenceSpaceType: 'local',
+    sessionInit: {
+      requiredFeatures: ['hit-test', 'anchors'], 
+      optionalFeatures: ['dom-overlay','local'],
+      domOverlay: { root: document.getElementById('overlayRoot') || document.body }
+    }
+  });
 
   renderer.xr.addEventListener('sessionstart', onSessionStart);
   renderer.xr.addEventListener('sessionend', onSessionEnd);
@@ -118,8 +107,8 @@ function animateFallback() {
   requestAnimationFrame(animateFallback);
   
   if (modelPrefab) {
-      if(modelPrefab.parent !== scene) scene.add(modelPrefab); // Tambahkan jika belum ada
-      modelPrefab.rotation.y += 0.01; // Rotasi otomatis
+      if(modelPrefab.parent !== scene) scene.add(modelPrefab); 
+      modelPrefab.rotation.y += 0.01; 
   }
   
   renderer.render(scene, camera);
@@ -135,7 +124,7 @@ async function onSessionStart() {
   placed.length = 0; 
   groupPlaced = false; 
 
-  if (modelPrefab) scene.remove(modelPrefab); // Hapus prefab dari scene
+  if (modelPrefab) scene.remove(modelPrefab); 
 
   document.getElementById('overlayRoot').classList.add('ar-active');
   
@@ -303,7 +292,7 @@ function populateAssetList() {
   assetListContainer.innerHTML = ''; 
 
   if (typeof ALAT_MEDIS_DATA === 'undefined') {
-    console.error("Data alat medis (ALAT_MEDIS_DATA) tidak ditemukan. Pastikan file alat-medis-data.js sudah dimuat.");
+    console.error("Data alat medis (ALAT_MEDIS_DATA) tidak ditemukan.");
     return;
   }
 
@@ -315,13 +304,14 @@ function populateAssetList() {
     
     button.addEventListener('click', () => {
       loadModel(key);
-      assetListContainer.style.display = 'none'; // Tutup menu
+      assetListContainer.style.display = 'none'; 
     });
     
     assetListContainer.appendChild(button);
   }
 }
 
+// --- MODIFIKASI UTAMA DI SINI (LOGIKA SKALA) ---
 function loadModel(key) {
   if (!placedAnchor) return; 
 
@@ -338,24 +328,46 @@ function loadModel(key) {
     infoDesc.textContent = data.deskripsi;
   }
   
-  if (modelCache[key]) {
-    currentModel = modelCache[key].clone();
+  // Fungsi untuk menerapkan skala & posisi
+  const setupModel = (model) => {
+    // --- LOGIKA SKALA BARU ---
+    const box = new THREE.Box3().setFromObject(model);
+    const center = box.getCenter(new THREE.Vector3());
+    const size = box.getSize(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z);
+    
+    // Atur skala agar sisi terpanjangnya 0.5 meter (50cm)
+    const scale = 0.5 / maxDim; 
+    model.scale.set(scale, scale, scale);
+    
+    // Pindahkan model agar pivot-nya di tengah lantai
+    // (center.y dikurangi setengah tinggi agar model 'duduk' di lantai)
+    model.position.sub(center);
+    model.position.y -= (size.y * scale / 2); 
+    // --- AKHIR LOGIKA SKALA BARU ---
+
+    currentModel = model;
     placedAnchor.add(currentModel);
+  };
+  // ---
+
+  // 3. Cek cache
+  if (modelCache[key]) {
+    const cachedModel = modelCache[key].clone();
+    setupModel(cachedModel);
   } else {
+    // 4. Load model baru jika tidak ada di cache
     loader.load(data.path, (gltf) => {
-      modelCache[key] = gltf.scene; 
-      currentModel = modelCache[key].clone();
-      
-      // Anda bisa mengatur skala/posisi awal di sini jika perlu
-      // currentModel.scale.set(0.5, 0.5, 0.5); 
-      
-      placedAnchor.add(currentModel);
+      modelCache[key] = gltf.scene; // Simpan prefab-nya
+      const newModel = modelCache[key].clone();
+      setupModel(newModel);
     }, undefined, (e) => {
       console.error(`Gagal load ${data.path}`, e);
       if (infoPanel) infoDesc.textContent = "Gagal memuat model.";
     });
   }
 }
+// --- AKHIR MODIFIKASI ---
 
 function toggleAssetList() {
   const isVisible = assetListContainer.style.display === 'block';
@@ -366,9 +378,6 @@ function toggleInfoPanel() {
   if (!infoPanel) return;
   const isVisible = infoPanel.style.display === 'block';
   infoPanel.style.display = isVisible ? 'none' : 'block';
-  
-  // Ganti ikon/teks jika perlu
-  // btnInfoToggle.textContent = isVisible ? 'ℹ️' : 'ℹ️'; 
 }
 
 function exitAR() {
