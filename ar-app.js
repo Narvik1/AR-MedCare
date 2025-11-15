@@ -365,6 +365,9 @@ function toggleInfoPanel() {
   if (!infoPanel) return;
   const isVisible = infoPanel.style.display === 'block';
   infoPanel.style.display = isVisible ? 'none' : 'block';
+  
+  // Ganti ikon/teks jika perlu
+  // btnInfoToggle.textContent = isVisible ? 'ℹ️' : 'ℹ️'; 
 }
 
 function exitAR() {
