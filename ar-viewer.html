@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AR Alat Medis - Viewer</title>
+  <style>
+    html,body{margin:0;height:100%;background:#111;color:#eee;font-family:system-ui,sans-serif}
+    canvas{display:block;width:100vw;height:100vh}
+
+    #overlayRoot{
+      position:fixed; inset:0; z-index:99999;
+      pointer-events:none; 
+    }
+    #hud{
+      position:fixed; left:12px; top:12px; display:flex; gap:10px; align-items:center;
+      padding:8px 10px; border-radius:12px; background:rgba(0,0,0,.35); backdrop-filter:blur(6px);
+      pointer-events:auto; 
+    }
+    #hud h1{margin:0;font-size:14px;font-weight:700;opacity:.95}
+
+    .xr-btn{
+      padding:8px 12px; border:none; border-radius:12px; cursor:pointer;
+      font-weight:800; letter-spacing:.2px; box-shadow:0 6px 20px rgba(0,0,0,.25);
+      background:#0077ff; color:#fff;
+    }
+    .xr-btn.exit{ background:#ff3333; }
+    .xr-btn:active{ transform:translateY(1px) }
+    
+    /* Tombol Kembali */
+    .ui-btn {
+      position: fixed;
+      top: 12px;
+      left: 12px; 
+      z-index: 10000;
+      padding: 8px 12px;
+      background: rgba(0,0,0,0.35);
+      backdrop-filter: blur(6px);
+      border: none;
+      color: white;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      pointer-events: auto;
+    }
+    
+    /* Panel Info */
+    #info-panel {
+      display: none; /* Sembunyi default */
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 90%;
+      max-width: 400px;
+      background: rgba(0, 0, 0, 0.7);
+      backdrop-filter: blur(4px);
+      color: white;
+      border-radius: 12px;
+      padding: 16px;
+      pointer-events: auto;
+      box-sizing: border-box;
+    }
+    
+    /* Tampilkan panel saat AR aktif */
+    .ar-active #info-panel {
+      display: block;
+    }
+    #info-panel h3 { margin-top: 0; }
+
+  </style>
+</head>
+<body>
+  <button id="backBtn" class="ui-btn" onclick="window.location='index.html'">← Kembali</button>
+
+  <div id="overlayRoot">
+    <div id="hud">
+      <h1>AR Alat Medis</h1>
+      </div>
+
+    <div id="info-panel">
+      <h3 id="info-title">Alat Medis</h3>
+      <p id="info-desc">Arahkan kamera ke lantai dan ketuk untuk memunculkan alat.</p>
+    </div>
+
+  </div>
+
+  <script type="module" src="./ar-app.js"></script>
+</body>
+</html>

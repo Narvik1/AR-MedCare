@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>AR Alat Medis - Menu Utama</title>
+  <link rel="stylesheet" href="style-menu.css">
+</head>
+<body>
+
+  <div class="parent">
+    
+    <div class="div1">
+      <h1>Pengenalan Alat Medis: AR Experience</h1>
+    </div>
+    
+    <div class="div2" id="model-viewer">
+      </div>
+    
+    <div class="div3 menu-button">
+      <button onclick="window.location='ar-viewer.html'">PLAY "Enter AR"</button>
+    </div>
+    
+    <div class="div4 menu-button">
+      <button onclick="window.location='settings.html'">Settings</button>
+    </div>
+    
+    <div class="div5 menu-button">
+      <button onclick="window.location='tutorial.html'">How to Play</button>
+    </div>
+    
+    <div class="div6 menu-button">
+      <button onclick="window.location='about.html'">About</button>
+    </div>
+  
+  </div>
+
+  <script type="module" src="./modules/three.module.js"></script>
+  <script type="module" src="./modules/gltfloader.js"></script>
+  <script type="module" src="./menu.js"></script>
+
+</body>
+</html>

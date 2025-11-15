@@ -1,0 +1,125 @@
+/* Pengaturan dasar */
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    background: #111;
+    color: #eee;
+    overflow: hidden;
+}
+
+/* Layout Grid dari CSS Anda */
+.parent {
+    display: grid;
+    grid-template-columns: 1fr;
+    grid-template-rows: repeat(10, 1fr);
+    gap: 10px;
+    padding: 10px;
+    height: 100vh;
+    box-sizing: border-box; 
+}
+    
+.div1 {
+    grid-row: span 2 / span 2;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 10px;
+    box-sizing: border-box;
+}
+
+.div1 h1 {
+    font-size: 2.5em;
+    color: #fff;
+    font-weight: 700;
+}
+
+.div2 {
+    grid-row: span 4 / span 4;
+    grid-row-start: 3;
+    border-radius: 12px;
+    overflow: hidden; 
+    background: #222; 
+    min-height: 200px;
+}
+
+/* Target untuk canvas di dalam div2 */
+#model-viewer {
+    width: 100%;
+    height: 100%;
+}
+#model-viewer canvas {
+    width: 100% !important;
+    height: 100% !important;
+}
+
+.div3, .div4, .div5, .div6 {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Styling untuk semua tombol menu */
+.menu-button button {
+    width: 100%;
+    height: 100%;
+    padding: 10px;
+    font-size: 1.2em;
+    font-weight: 600;
+    color: #333;
+    background: #eee;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+}
+
+.menu-button button:hover {
+    background: #fff;
+}
+
+.menu-button button:active {
+    transform: scale(0.98);
+}
+
+.div3 button {
+    background: #0077ff;
+    color: #fff;
+}
+.div3 button:hover {
+    background: #0088ff;
+}
+
+/* CSS untuk halaman statis (About, Settings, dll) */
+body.static-page {
+    overflow: auto; /* Izinkan scroll di halaman statis */
+}
+.static-container {
+    padding: 20px;
+    max-width: 800px;
+    margin: 20px auto;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+}
+
+.static-container h1 {
+    border-bottom: 2px solid #0077ff;
+    padding-bottom: 10px;
+}
+
+.back-button {
+    padding: 12px 20px;
+    font-size: 1em;
+    font-weight: 600;
+    color: #fff;
+    background: #0077ff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    margin-top: 20px;
+}
