@@ -28,24 +28,23 @@ if (container) {
   dirLight.position.set(5, 5, 5);
   scene.add(dirLight);
 
-  // 5. Muat Model Alat Medis
+  // 5. Muat Model Alat Medis (Penlight sebagai default)
   const loader = new GLTFLoader();
-  // --- GANTI PATH INI ---
-  const modelPath = './assets/penlight-compressed.glb'; // Ganti dengan path ke model Anda
+  const modelPath = './assets/penlight-compressed.glb'; // Path ke Penlight
   loader.load(
       modelPath, 
       (gltf) => {
           model = gltf.scene;
           
-          // --- BARU: Hitung bounding box untuk memusatkan model ---
+          // --- MODIFIKASI: Hitung bounding box untuk memusatkan model ---
           const box = new THREE.Box3().setFromObject(model);
           const center = box.getCenter(new THREE.Vector3());
           model.position.sub(center); // Pindahkan ke tengah
           
-          // Skala model agar pas (opsional, sesuaikan)
+          // Skala model agar pas (disesuaikan)
           const size = box.getSize(new THREE.Vector3());
           const maxDim = Math.max(size.x, size.y, size.z);
-          const scale = 1.0 / maxDim;
+          const scale = 1.0 / maxDim; // Skala agar pas (ukuran 1)
           model.scale.set(scale, scale, scale);
 
           scene.add(model);
@@ -62,13 +61,13 @@ if (container) {
           model.rotation.y += 0.01; // Putar model
       }
       
-      renderer.render(scene, camera);
+      if (renderer) renderer.render(scene, camera);
   }
   animate();
 
   // 7. Handle Resize
   window.addEventListener('resize', () => {
-      if (!container) return;
+      if (!container || !renderer) return;
       camera.aspect = container.clientWidth / container.clientHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(container.clientWidth, container.clientHeight);

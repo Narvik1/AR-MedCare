@@ -10,20 +10,28 @@ let controller;
 let reticle;
 let hitTestSource = null, hitCancel = null;
 let xrSession = null;
-let arRoot = null;
+let arRoot = null; // Grup untuk menampung objek AR
 let lastSpawnTs = 0;
 
 let refSpace = null;
 let lastXRFrame = null;
 let lastHit = null;
-const placed = []; // Array untuk objek yang ditempatkan
+const placed = []; // Array untuk anchor yang ditempatkan
 
-let modelPrefab = null; // Prefab untuk model alat medis
-let groupPlaced = false;
+// --- Logika Baru untuk Sidebar ---
 const loader = new GLTFLoader();
+const modelCache = {};      // Cache untuk model yang sudah di-load
+let placedAnchor = null;    // Satu anchor (jangkar) di lantai
+let currentModel = null;    // Model yang sedang ditampilkan
+let groupPlaced = false;    // Status apakah anchor sudah ditempatkan
+let modelPrefab = null;     // Model untuk fallback (Foto 2)
+// ---
 
 // Referensi UI
 let infoPanel, infoTitle, infoDesc;
+let sidebarMenu, assetListContainer, btnAssets, btnInfoToggle, btnExitAr;
+// textureLoader dihapus dari sini
+// ---
 
 // ===== Bootstrap =====
 init();
@@ -40,7 +48,12 @@ function init() {
   document.body.appendChild(renderer.domElement);
 
   scene = new THREE.Scene();
-  scene.background = null;
+  
+  // --- Latar belakang sekarang di-handle oleh CSS ---
+  // Kita buat scene transparan agar CSS terlihat
+  scene.background = null; 
+  renderer.setClearAlpha(0); // <-- Tambahkan ini
+  // ---
 
   camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 50);
   camera.position.set(0, 1.6, 0); 
@@ -51,15 +64,14 @@ function init() {
   dirLight.position.set(1, 1.5, 0.5);
   scene.add(dirLight);
 
-  // --- Muat SATU Model Alat Medis sebagai Prefab ---
-  // GANTI PATH INI dengan path ke model Anda
+  // --- Muat Penlight untuk fallback (Foto 2) ---
   const modelPath = './assets/penlight-compressed.glb'; 
   loader.load(modelPath, (gltf) => {
       modelPrefab = gltf.scene;
-      modelPrefab.scale.set(0.5, 0.5, 0.5); // Atur skala default
-      modelPrefab.position.set(0, 0, -3); // Atur posisi fallback
+      modelPrefab.scale.set(0.5, 0.5, 0.5); 
+      modelPrefab.position.set(0, 1, -2); // Atur posisi fallback
       modelPrefab.name = 'AlatMedis_Prefab';
-      scene.add(modelPrefab);
+      // Jangan tambahkan ke scene dulu, tambahkan di animateFallback
   }, undefined, (e) => console.error(`Gagal load ${modelPath}`, e));
   // ---
 
@@ -67,6 +79,19 @@ function init() {
   infoPanel = document.getElementById('info-panel');
   infoTitle = document.getElementById('info-title');
   infoDesc = document.getElementById('info-desc');
+  
+  // --- Implementasi Sidebar (FOTO 3 & 4) ---
+  sidebarMenu = document.getElementById('sidebar-menu');
+  assetListContainer = document.getElementById('asset-list-container');
+  btnAssets = document.getElementById('btn-assets');
+  btnInfoToggle = document.getElementById('btn-info-toggle');
+  btnExitAr = document.getElementById('btn-exit-ar');
+
+  // Tambahkan event listener
+  btnAssets.addEventListener('click', toggleAssetList);
+  btnInfoToggle.addEventListener('click', toggleInfoPanel);
+  btnExitAr.addEventListener('click', exitAR);
+  // ---
 
   window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
@@ -91,7 +116,10 @@ function animateFallback() {
   if (xrSession) return;
   requestAnimationFrame(animateFallback);
   
-  if (modelPrefab) modelPrefab.rotation.y += 0.01; // Rotasi otomatis di menu
+  if (modelPrefab) {
+      if(modelPrefab.parent !== scene) scene.add(modelPrefab); // Tambahkan jika belum ada
+      modelPrefab.rotation.y += 0.01; // Rotasi otomatis
+  }
   
   renderer.render(scene, camera);
 }
@@ -103,20 +131,27 @@ async function onSessionStart() {
   lastSpawnTs = 0;
   lastXRFrame = null;
   lastHit = null;
-  placed.length = 0;
+  placed.length = 0; 
   groupPlaced = false; 
 
-  if (modelPrefab) modelPrefab.visible = false; // Sembunyikan prefab
+  if (modelPrefab) scene.remove(modelPrefab); // Hapus prefab dari scene
 
   document.getElementById('overlayRoot').classList.add('ar-active');
+  
   if (infoPanel) {
-    infoTitle.textContent = "Alat Medis";
-    infoDesc.textContent = "Arahkan kamera ke lantai dan ketuk untuk menempatkan alat.";
+    infoTitle.textContent = "Mode AR Aktif";
+    infoDesc.textContent = "Arahkan kamera ke lantai dan ketuk untuk menempatkan jangkar (anchor).";
+    infoPanel.style.display = 'block'; 
   }
+
+  sidebarMenu.style.display = 'none';
+  assetListContainer.style.display = 'none';
+  
+  populateAssetList();
 
   refSpace = await xrSession.requestReferenceSpace('local');
 
-  arRoot = new THREE.Group();
+  arRoot = new THREE.Group(); 
   arRoot.name = 'ar-session-root';
   scene.add(arRoot);
 
@@ -152,15 +187,26 @@ function onSessionEnd() {
   xrSession = null; 
 
   document.getElementById('overlayRoot').classList.remove('ar-active');
+  
+  if (infoPanel) infoPanel.style.display = 'none';
+  sidebarMenu.style.display = 'none';
+  assetListContainer.style.display = 'none';
+
+  if (currentModel) {
+      if(currentModel.parent) currentModel.parent.remove(currentModel);
+      currentModel = null;
+  }
+  if (placedAnchor) {
+      if(placedAnchor.parent) placedAnchor.parent.remove(placedAnchor);
+      placedAnchor = null;
+  }
 
   placed.length = 0; 
   groupPlaced = false;
-
-  if (modelPrefab) modelPrefab.visible = true; // Tampilkan lagi prefab
   
   renderer.domElement.removeEventListener('pointerup', domSelectFallback);
-  renderer.domElement.removeEventListener('click', domSelectFallback);
-  renderer.domElement.removeEventListener('touchend', domSelectFallback);
+  renderer.domElement.removeEventListener('click', domSelectFallback, domOpts);
+  renderer.domElement.addEventListener('touchend', domSelectFallback, domOpts);
 
   if (controller) {
     controller.removeEventListener('selectstart', onSelectLike);
@@ -176,18 +222,7 @@ function onSessionEnd() {
   lastXRFrame = null;
 
   if (reticle) { disposeReticle(reticle); reticle = null; }
-
-  if (arRoot) {
-    arRoot.traverse(obj => {
-      if (obj.isMesh) {
-        obj.geometry?.dispose?.();
-        const mats = Array.isArray(obj.material) ? obj.material : [obj.material];
-        mats.forEach(m => m?.dispose?.());
-      }
-    });
-    scene.remove(arRoot);
-    arRoot = null;
-  }
+  if (arRoot) { scene.remove(arRoot); arRoot = null; }
   
   requestAnimationFrame(animateFallback); 
 }
@@ -198,10 +233,8 @@ function renderXR(time, frame) {
 
   lastXRFrame = frame;
   const session = frame.session;
-
   if (!refSpace) refSpace = renderer.xr.getReferenceSpace?.() || refSpace;
 
-  // Tampilkan reticle HANYA jika belum ada objek yang ditempatkan
   const haveReticle = updateReticle(reticle, frame, hitTestSource, refSpace);
   if (!haveReticle || groupPlaced) { 
     lastHit = null;
@@ -228,53 +261,118 @@ function renderXR(time, frame) {
 function onSelectLike() { onSelect(); }
 
 async function onSelect() {
-  // Hanya tempatkan jika reticle terlihat dan BELUM ada objek
   if (!reticle || !reticle.visible || groupPlaced) return; 
 
   const now = performance.now();
   if (now - lastSpawnTs < 160) return;
   lastSpawnTs = now;
 
-  // Jika prefab belum ter-load, jangan lakukan apa-apa
-  if (!modelPrefab) return;
-
-  // Kloning model prefab
-  const mesh = modelPrefab.clone();
-  mesh.visible = true; 
-  mesh.name = "AlatMedis_Placed";
-  mesh.position.set(0, 0, 0); 
-  mesh.rotation.set(0, 0, 0);
-  mesh.scale.set(0.5, 0.5, 0.5); // Set skala yang sama
-  
   let anchored = false;
   try {
     if (lastHit && typeof lastHit.createAnchor === 'function') {
       const anchor = await lastHit.createAnchor();
       if (anchor?.anchorSpace) {
-        (arRoot ?? scene).add(mesh);
-        placed.push({ mesh, anchorSpace: anchor.anchorSpace }); 
+        
+        placedAnchor = new THREE.Group();
+        placedAnchor.matrixAutoUpdate = false;
+        
+        placed.push({ mesh: placedAnchor, anchorSpace: anchor.anchorSpace }); 
+        (arRoot ?? scene).add(placedAnchor);
+        
         anchored = true;
-        groupPlaced = true; // Tandai bahwa kita sudah menempatkan objek
+        groupPlaced = true; 
       }
     }
   } catch (e) {
     anchored = false; 
   }
 
-  if (!anchored) {
-    mesh.applyMatrix4(reticle.matrix);
-    mesh.matrixAutoUpdate = false;
-    placed.push({ mesh }); 
-    (arRoot ?? scene).add(mesh);
-    groupPlaced = true; // Tandai bahwa kita sudah menempatkan objek
-  }
-  
-  // --- BARU: Update panel info setelah objek ditempatkan ---
-  if (infoPanel) {
-    infoTitle.textContent = "Penlight"; // Ganti dengan nama alat
-    infoDesc.textContent = "Ini adalah placeholder untuk deskripsi singkat alat medis yang muncul."; // Ganti dengan info
+  if (anchored) {
+    sidebarMenu.style.display = 'flex';
+    if (infoPanel) {
+      infoTitle.textContent = "Pilih Alat Medis";
+      infoDesc.textContent = "Silakan pilih alat medis dari menu di sebelah kiri.";
+    }
   }
 }
+
+// --- FUNGSI BARU: Logika Sidebar ---
+
+function populateAssetList() {
+  assetListContainer.innerHTML = ''; 
+
+  if (typeof ALAT_MEDIS_DATA === 'undefined') {
+    console.error("Data alat medis (ALAT_MEDIS_DATA) tidak ditemukan. Pastikan file alat-medis-data.js sudah dimuat.");
+    return;
+  }
+
+  for (const key in ALAT_MEDIS_DATA) {
+    const data = ALAT_MEDIS_DATA[key];
+    const button = document.createElement('button');
+    button.textContent = data.nama;
+    button.dataset.key = key; 
+    
+    button.addEventListener('click', () => {
+      loadModel(key);
+      assetListContainer.style.display = 'none'; // Tutup menu
+    });
+    
+    assetListContainer.appendChild(button);
+  }
+}
+
+function loadModel(key) {
+  if (!placedAnchor) return; 
+
+  const data = ALAT_MEDIS_DATA[key];
+  if (!data) return;
+
+  if (currentModel) {
+    placedAnchor.remove(currentModel);
+    currentModel = null; 
+  }
+
+  if (infoPanel) {
+    infoTitle.textContent = data.nama;
+    infoDesc.textContent = data.deskripsi;
+  }
+  
+  if (modelCache[key]) {
+    currentModel = modelCache[key].clone();
+    placedAnchor.add(currentModel);
+  } else {
+    loader.load(data.path, (gltf) => {
+      modelCache[key] = gltf.scene; 
+      currentModel = modelCache[key].clone();
+      
+      // Anda bisa mengatur skala/posisi awal di sini jika perlu
+      // currentModel.scale.set(0.5, 0.5, 0.5); 
+      
+      placedAnchor.add(currentModel);
+    }, undefined, (e) => {
+      console.error(`Gagal load ${data.path}`, e);
+      if (infoPanel) infoDesc.textContent = "Gagal memuat model.";
+    });
+  }
+}
+
+function toggleAssetList() {
+  const isVisible = assetListContainer.style.display === 'block';
+  assetListContainer.style.display = isVisible ? 'none' : 'block';
+}
+
+function toggleInfoPanel() {
+  if (!infoPanel) return;
+  const isVisible = infoPanel.style.display === 'block';
+  infoPanel.style.display = isVisible ? 'none' : 'block';
+}
+
+function exitAR() {
+  if (xrSession) {
+    xrSession.end();
+  }
+}
+// ---
 
 function domSelectFallback(e) {
   if (e.target?.closest?.('.xr-btn')) return;
