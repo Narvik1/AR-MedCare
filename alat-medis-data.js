@@ -53,13 +53,8 @@ const ALAT_MEDIS_DATA = {
         path: './assets/tensimeter-compressed.glb',
         deskripsi: 'Tensimeter digunakan untuk mengukur tekanan darah. Alat ini terdiri dari manset yang dipasang di lengan dan indikator tekanan berupa jarum analog atau layar digital.'
     },
-    'tiang-infus': {
-        nama: 'Tiang Infus',
-        path: './assets/TIANG INFUS.glb',
-        deskripsi: 'Ini adalah deskripsi placeholder untuk Tiang Infus.'
-    },
     'thermometer': {
-        nama: 'Tiang Infus',
+        nama: '1. Thermometer',
         path: './assets/thermometer.glb',
         deskripsi: 'Thermometer adalah alat untuk mengukur suhu tubuh. Umumnya digunakan untuk mengetahui kondisi demam atau perubahan suhu tubuh pasien. Jenisnya meliputi digital, infrared, dan mercury.'
     }    
