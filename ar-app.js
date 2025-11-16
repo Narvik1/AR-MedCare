@@ -23,11 +23,13 @@ const modelCache = {};
 let placedAnchor = null;    
 let currentModel = null;    
 let groupPlaced = false;    
-let modelPrefab = null;     
+let modelPrefab = null;
+let hasFoundPlaneOnce = false;     
 
 // Referensi UI
 let infoPanel, infoTitle, infoDesc;
 let sidebarMenu, assetListContainer, btnAssets, btnInfoToggle, btnExitAr;
+let scanOverlay;
 
 // ===== Bootstrap =====
 init();
@@ -71,7 +73,8 @@ function init() {
   infoPanel = document.getElementById('info-panel');
   infoTitle = document.getElementById('info-title');
   infoDesc = document.getElementById('info-desc');
-  
+  scanOverlay = document.getElementById('scan-overlay');
+
   // Implementasi Sidebar (FOTO 3 & 4)
   sidebarMenu = document.getElementById('sidebar-menu');
   assetListContainer = document.getElementById('asset-list-container');
@@ -123,6 +126,7 @@ async function onSessionStart() {
   lastHit = null;
   placed.length = 0; 
   groupPlaced = false; 
+  hasFoundPlaneOnce = false; // <-- BARU: Reset flag
 
   if (modelPrefab) scene.remove(modelPrefab); 
 
@@ -130,8 +134,12 @@ async function onSessionStart() {
   
   if (infoPanel) {
     infoTitle.textContent = "Mode AR Aktif";
-    infoDesc.textContent = "Arahkan kamera ke lantai dan ketuk untuk menempatkan jangkar (anchor).";
+    infoDesc.textContent = "Arahkan kamera ke lantai lalu gerakkan memutar secara perlahan.";
     infoPanel.style.display = 'block'; 
+  }
+
+  if (scanOverlay) {
+    scanOverlay.style.display = 'flex'; // Tampilkan overlay pemindaian
   }
 
   sidebarMenu.style.display = 'none';
@@ -179,6 +187,7 @@ function onSessionEnd() {
   document.getElementById('overlayRoot').classList.remove('ar-active');
   
   if (infoPanel) infoPanel.style.display = 'none';
+  if (scanOverlay) scanOverlay.style.display = 'none'; // <-- BARU
   sidebarMenu.style.display = 'none';
   assetListContainer.style.display = 'none';
 
@@ -230,6 +239,17 @@ function renderXR(time, frame) {
     lastHit = null;
     if(reticle) reticle.visible = false;
   } else {
+    if (hasFoundPlaneOnce === false) {
+        hasFoundPlaneOnce = true;
+        if (scanOverlay) scanOverlay.style.display = 'none'; // Sembunyikan instruksi pindai
+        
+        // Tampilkan instruksi "Ketuk"
+        if (infoPanel) {
+            infoTitle.textContent = "Lantai Terdeteksi";
+            infoDesc.textContent = "Ketuk untuk menempatkan alat.";
+            infoPanel.style.display = 'block';
+        }
+    }    
     const results = frame.getHitTestResults(hitTestSource);
     if (results.length) lastHit = results[0];
   }
@@ -253,6 +273,9 @@ function onSelectLike() { onSelect(); }
 async function onSelect() {
   if (!reticle || !reticle.visible || groupPlaced) return; 
 
+  // --- MODIFIKASI: Sembunyikan overlay saat tap ---
+  if (scanOverlay) scanOverlay.style.display = 'none'; // <-- BARU
+  
   const now = performance.now();
   if (now - lastSpawnTs < 160) return;
   lastSpawnTs = now;
@@ -282,6 +305,7 @@ async function onSelect() {
     if (infoPanel) {
       infoTitle.textContent = "Pilih Alat Medis";
       infoDesc.textContent = "Silakan pilih alat medis dari menu di sebelah kiri.";
+      infoPanel.style.display = 'block'; // Pastikan panel info terlihat
     }
   }
 }

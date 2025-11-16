@@ -204,7 +204,7 @@ body.ar-viewer-page .xr-btn.exit {
 #sidebar-menu {
     position: fixed;
     left: 10px;
-    top: 20px;
+    top: 30px;
     transform: none;
     background: rgba(20, 20, 25, 0.8);
     backdrop-filter: blur(8px);
@@ -238,7 +238,7 @@ body.ar-viewer-page .xr-btn.exit {
 #asset-list-container {
     position: fixed;
     left: 75px; 
-    top: 75px;
+    top: 95px;
     transform: none;
     width: 240px;
     height: 70vh;
@@ -298,4 +298,28 @@ body.ar-viewer-page .xr-btn.exit {
 /* Ini adalah perbaikan untuk tombol "Kembali" Anda agar tidak tertutup */
 .ui-btn {
   z-index: 10001; /* Pastikan di atas segalanya */
+}
+
+/* ======================================== */
+/* === 5. STYLE UNTUK SCAN OVERLAY      === */
+/* ======================================== */
+
+#scan-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5); /* Latar belakang gelap transparan */
+  color: white;
+  font-size: 1.2em;
+  font-weight: 600;
+  display: none; /* Sembunyi by default */
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  padding: 20px;
+  box-sizing: border-box;
+  z-index: 20; /* Tampil di atas segalanya */
+  pointer-events: none; /* Tidak bisa diklik */
 }
