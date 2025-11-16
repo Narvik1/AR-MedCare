@@ -65,7 +65,7 @@ function init() {
   loader.load(modelPath, (gltf) => {
       modelPrefab = gltf.scene;
       modelPrefab.scale.set(0.5, 0.5, 0.5); 
-      modelPrefab.position.set(0, 1, -2); 
+      modelPrefab.position.set(0, 0, 0); //Penlight position
       modelPrefab.name = 'AlatMedis_Prefab';
   }, undefined, (e) => console.error(`Gagal load ${modelPath}`, e));
 
@@ -133,9 +133,7 @@ async function onSessionStart() {
   document.getElementById('overlayRoot').classList.add('ar-active');
   
   if (infoPanel) {
-    infoTitle.textContent = "Mode AR Aktif";
-    infoDesc.textContent = "Arahkan kamera ke lantai lalu gerakkan memutar secara perlahan.";
-    infoPanel.style.display = 'block'; 
+    infoPanel.style.display = 'none'; 
   }
 
   if (scanOverlay) {
