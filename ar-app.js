@@ -64,8 +64,8 @@ function init() {
   const modelPath = './assets/penlight-compressed.glb'; 
   loader.load(modelPath, (gltf) => {
       modelPrefab = gltf.scene;
-      modelPrefab.scale.set(0.5, 0.5, 0.5); 
-      modelPrefab.position.set(0, 0, 0); //Penlight position
+      // modelPrefab.scale.set(0.5, 0.5, 0.5); 
+      // modelPrefab.position.set(0, 0, 0); //Penlight position
       modelPrefab.name = 'AlatMedis_Prefab';
   }, undefined, (e) => console.error(`Gagal load ${modelPath}`, e));
 

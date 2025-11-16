@@ -54,7 +54,7 @@ const ALAT_MEDIS_DATA = {
         deskripsi: 'Tensimeter digunakan untuk mengukur tekanan darah. Alat ini terdiri dari manset yang dipasang di lengan dan indikator tekanan berupa jarum analog atau layar digital.'
     },
     'thermometer': {
-        nama: '1. Thermometer',
+        nama: 'Thermometer',
         path: './assets/thermometer.glb',
         deskripsi: 'Thermometer adalah alat untuk mengukur suhu tubuh. Umumnya digunakan untuk mengetahui kondisi demam atau perubahan suhu tubuh pasien. Jenisnya meliputi digital, infrared, dan mercury.'
     }    
