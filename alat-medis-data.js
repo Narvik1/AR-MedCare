@@ -57,5 +57,10 @@ const ALAT_MEDIS_DATA = {
         nama: 'Tiang Infus',
         path: './assets/TIANG INFUS.glb',
         deskripsi: 'Ini adalah deskripsi placeholder untuk Tiang Infus.'
-    }
+    },
+    'thermometer': {
+        nama: 'Tiang Infus',
+        path: './assets/thermometer.glb',
+        deskripsi: 'Thermometer adalah alat untuk mengukur suhu tubuh. Umumnya digunakan untuk mengetahui kondisi demam atau perubahan suhu tubuh pasien. Jenisnya meliputi digital, infrared, dan mercury.'
+    }    
 };
