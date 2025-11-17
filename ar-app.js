@@ -333,7 +333,7 @@ async function onSelect() {
     sidebarMenu.style.display = 'flex';
     if (infoPanel) {
       infoTitle.textContent = "Pilih Alat Medis";
-      infoDesc.textContent = "Silakan pilih alat medis dari menu di sebelah kiri.";
+      infoDesc.textContent = "Silakan pilih alat medis dari ikon "+" pada menu sidebar di sebelah kiri.";
       infoPanel.style.display = 'block';
     }
   }
