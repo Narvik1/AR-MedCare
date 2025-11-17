@@ -119,9 +119,8 @@ body.static-page {
 
 /* PERBAIKAN: Latar belakang fullscreen */
 body.ar-viewer-page {
-    background-color: #fff; /* <-- Menggunakan putih sebagai default */
+    background-color: #fff; /* Latar belakang putih sesuai permintaan Anda */
     background-image: none; /* Hapus gambar latar belakang */
-    /* background-image: url('./assets/bg.jpg'); <-- Komen ini atau hapus */
     background-size: cover;
     background-position: center;
 }
@@ -135,41 +134,52 @@ body.ar-viewer-page canvas {
     z-index: -1; /* Kirim ke belakang */
 }
 
-/* PERBAIKAN: Posisi HUD dan tombol AR */
+/* PERBAIKAN: Tombol "Enter AR" di tengah */
 body.ar-viewer-page #hud {
-    position: fixed; /* Penting agar bisa di tengah layar */
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: auto; /* Agar pas dengan isi */
-    display: flex; /* Mengatur isi agar sejajar */
-    flex-direction: column; /* Menumpuk secara vertikal */
-    align-items: center; /* Pusatkan secara horizontal */
+    width: 250px;
     justify-content: center;
-    pointer-events: none; /* Biarkan klik tembus ke canvas, kecuali untuk tombol AR */
+    /* Hapus style lama agar tidak tumpang tindih */
+    padding: 0;
+    background: transparent;
+    backdrop-filter: none;
+    pointer-events: none; /* Biarkan klik tembus, KECUALI tombol AR */
 }
-
-/* PERBAIKAN: Sembunyikan H1 "AR Alat Medis" di fallback */
 body.ar-viewer-page #hud h1 {
-    display: none; 
-    color: #333; /* Warna teks agar terlihat di latar putih */
-    margin-bottom: 15px; /* Sedikit spasi di bawah H1 */
-    pointer-events: auto; /* Aktifkan pointer events untuk H1 (jika ditampilkan) */
+    display: none; /* Sembunyikan teks "AR Alat Medis" di fallback */
 }
-/* Tampilkan H1 saat AR aktif */
 .ar-active #hud h1 {
-    display: block; 
+    display: block; /* Tampilkan lagi saat AR aktif */
+    /* Pastikan H1 ada di atas */
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0,0,0,0.35);
+    backdrop-filter: blur(6px);
+    padding: 8px 10px;
+    border-radius: 12px;
+    color: white;
 }
 
-
-/* Styling untuk tombol AR */
-#ar-button-container {
-    /* Ini adalah div yang akan menampung tombol "Enter AR" */
-    pointer-events: auto; /* Aktifkan pointer events di sini agar tombol bisa diklik */
-    /* Tambahkan style jika Anda ingin container ini terlihat */
-    /* background: rgba(0, 0, 0, 0.3); */
-    /* padding: 10px; */
-    /* border-radius: 8px; */
+/* PERBAIKAN: Style untuk .xr-btn (agar tombol AR terlihat) */
+.xr-btn {
+  padding: 12px 24px;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 800;
+  font-size: 1.2em;
+  letter-spacing: 0.2px;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
+  background: #0077ff;
+  color: #fff;
+  pointer-events: auto; /* Pastikan tombol bisa diklik */
+}
+.xr-btn:active { 
+  transform: translateY(1px); 
 }
 
 /* PERBAIKAN: Sembunyikan tombol "Exit AR" merah bawaan */
@@ -204,8 +214,8 @@ body.ar-viewer-page .xr-btn.exit {
 #sidebar-menu {
     position: fixed;
     left: 10px;
-    top: 75px;
-    transform: none;
+    top: 50px; /* Posisi baru, sedikit di bawah tombol kembali */
+    transform: translateY(-50%);
     background: rgba(20, 20, 25, 0.8);
     backdrop-filter: blur(8px);
     border-radius: 10px;
@@ -238,8 +248,8 @@ body.ar-viewer-page .xr-btn.exit {
 #asset-list-container {
     position: fixed;
     left: 75px; 
-    top: 75px;
-    transform: none;
+    top: 50px; /* Posisi baru, sejajar dengan sidebar */
+    transform: translateY(-50%);
     width: 240px;
     height: 70vh;
     max-height: 400px;
@@ -269,57 +279,3 @@ body.ar-viewer-page .xr-btn.exit {
 }
 #asset-list-container button:hover { background: #0088ff; }
 #asset-list-container button:last-child { margin-bottom: 0; }
-/* ======================================== */
-/* === 4. STYLE UNTUK TOMBOL AR BAWAAN  === */
-/* ======================================== */
-
-/* Ini adalah style yang hilang untuk tombol "Enter AR" */
-.xr-btn {
-  padding: 8px 12px;
-  border: none;
-  border-radius: 12px;
-  cursor: pointer;
-  font-weight: 800;
-  letter-spacing: 0.2px;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
-  background: #0077ff;
-  color: #fff;
-  pointer-events: auto; /* Pastikan bisa diklik */
-}
-
-.xr-btn.exit { 
-  background: #ff3333; 
-}
-
-.xr-btn:active { 
-  transform: translateY(1px); 
-}
-
-/* Ini adalah perbaikan untuk tombol "Kembali" Anda agar tidak tertutup */
-.ui-btn {
-  z-index: 10001; /* Pastikan di atas segalanya */
-}
-
-/* ======================================== */
-/* === 5. STYLE UNTUK SCAN OVERLAY      === */
-/* ======================================== */
-
-#scan-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.5); /* Latar belakang gelap transparan */
-  color: white;
-  font-size: 1.2em;
-  font-weight: 600;
-  display: none; /* Sembunyi by default */
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-  padding: 20px;
-  box-sizing: border-box;
-  z-index: 20; /* Tampil di atas segalanya */
-  pointer-events: none; /* Tidak bisa diklik */
-}
