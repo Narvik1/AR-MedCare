@@ -14,7 +14,7 @@ const ALAT_MEDIS_DATA = {
         deskripsi: 'Gunting medis digunakan untuk memotong perban, kasa, pakaian pasien, atau material medis lainnya.'
     },
     'kasa': {
-        nama: '999 Kasa (Gauze)',
+        nama: 'Kasa (Gauze)',
         path: './assets/kasa-compressed.glb',
         deskripsi: 'Kasa adalah bahan medis berpori yang digunakan untuk menyerap darah, membersihkan luka, atau menjadi bantalan sebelum dibalut perban.'
     },
@@ -54,7 +54,7 @@ const ALAT_MEDIS_DATA = {
         deskripsi: 'Tensimeter digunakan untuk mengukur tekanan darah. Alat ini terdiri dari manset yang dipasang di lengan dan indikator tekanan berupa jarum analog atau layar digital.'
     },
     'thermometer': {
-        nama: 'Thermometer',
+        nama: '111 Thermometer',
         path: './assets/thermometer.glb',
         deskripsi: 'Thermometer adalah alat untuk mengukur suhu tubuh. Umumnya digunakan untuk mengetahui kondisi demam atau perubahan suhu tubuh pasien. Jenisnya meliputi digital, infrared, dan mercury.'
     }    

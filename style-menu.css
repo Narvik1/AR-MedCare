@@ -246,7 +246,7 @@ body.ar-viewer-page .xr-btn.exit {
 #sidebar-menu {
     position: fixed;
     left: 10px;
-    top: 75px; 
+    top: 150px; 
     transform: none;
     background: rgba(20, 20, 25, 0.8);
     backdrop-filter: blur(8px);
@@ -280,7 +280,7 @@ body.ar-viewer-page .xr-btn.exit {
 #asset-list-container {
     position: fixed;
     left: 75px; 
-    top: 75px; 
+    top: 150px; 
     transform: none;
     width: 240px;
     height: 70vh;
