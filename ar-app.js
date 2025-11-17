@@ -35,15 +35,17 @@ let scanOverlay;
 const gestureState = {
     touchCount: 0,
     isInteracting: false,
-    mode: null, // 'pan', 'scale-rotate'
-    
+    mode: null, 
     isPanning: false, 
-
     lastScale: 1,
     lastRotation: 0,
     initialTouchDistance: 0,
     initialTouchAngle: 0
 };
+
+// --- GESTUR: Variabel untuk Raycasting ---
+const raycaster = new THREE.Raycaster();
+const touchPos = new THREE.Vector2();
 // ---
 
 // ===== Bootstrap =====
@@ -231,14 +233,12 @@ function renderXR(time, frame) {
   const session = frame.session;
   if (!refSpace) refSpace = renderer.xr.getReferenceSpace?.() || refSpace;
 
-  // --- REVISI 1: Dapatkan hasil hit-test sekali di awal ---
   let hitTestResults = null;
   if (hitTestSource) {
       hitTestResults = frame.getHitTestResults(hitTestSource);
   }
-  // ---
 
-  // Logika Panning (Move) 1-Jari
+  // --- REVISI: Logika Panning (Move) 1-Jari ---
   if (gestureState.isPanning && groupPlaced && placedAnchor && hitTestResults && hitTestResults.length > 0) {
       const pose = hitTestResults[0].getPose(refSpace);
       if (pose) {
@@ -247,6 +247,7 @@ function renderXR(time, frame) {
           placedAnchor.updateMatrixWorld(true);
       }
   }
+  // ---
 
   const haveReticle = updateReticle(reticle, frame, hitTestSource, refSpace);
   
@@ -254,9 +255,8 @@ function renderXR(time, frame) {
     lastHit = null;
     if(reticle) reticle.visible = false;
   } else {
-    // Gunakan hasil hit-test yang sudah ada
     if (hitTestResults && hitTestResults.length > 0) {
-        lastHit = hitTestResults[0]; // Simpan hit untuk 'onSelect'
+        lastHit = hitTestResults[0]; 
         if (hasFoundPlaneOnce === false) {
             hasFoundPlaneOnce = true;
             if (scanOverlay) scanOverlay.style.display = 'none'; 
@@ -272,7 +272,7 @@ function renderXR(time, frame) {
 
   // Update posisi anchor
   for (const p of placed) {
-    if (!p.anchorSpace) continue; // <-- INI PENTING (jika anchorSpace = null, lewati)
+    if (!p.anchorSpace) continue; 
     if (!gestureState.isPanning) { 
         const apose = frame.getPose(p.anchorSpace, refSpace);
         if (apose) {
@@ -414,10 +414,13 @@ function exitAR() {
 }
 // ---
 
-// --- GESTUR: FUNGSI HANDLER SENTUHAN ---
+// --- GESTUR: FUNGSI HANDLER SENTUHAN (REVISI BESAR) ---
 
 function onTouchStart(event) {
-    if (!xrSession || !groupPlaced || !currentModel) return;
+    // Hanya jalankan gestur JIKA anchor sudah ditempatkan
+    if (!xrSession || !groupPlaced) return;
+
+    // Cek apakah sentuhan di atas UI, jika ya, abaikan gestur
     if (event.target.closest('#sidebar-menu, #asset-list-container, #info-panel, .ui-btn')) {
         return;
     }
@@ -427,17 +430,33 @@ function onTouchStart(event) {
     gestureState.touchCount = touches.length;
 
     if (touches.length === 1) {
-        gestureState.mode = 'pan';
-        gestureState.isInteracting = true;
-        gestureState.isPanning = true; 
+        // --- REVISI: Logika 1 Jari (Pan) ---
+        // 1. Normalisasi koordinat sentuh (-1 s/d +1)
+        touchPos.x = (touches[0].clientX / window.innerWidth) * 2 - 1;
+        touchPos.y = -(touches[0].clientY / window.innerHeight) * 2 + 1;
         
-        // --- REVISI 2: Lepaskan dari jangkar lama ---
-        if (placed.length > 0) {
-            placed[0].anchorSpace = null; // Detach!
+        // 2. Tembakkan raycaster dari kamera
+        raycaster.setFromCamera(touchPos, camera);
+        
+        // 3. Cek apakah raycaster mengenai 'currentModel'
+        if (currentModel) {
+            const intersects = raycaster.intersectObject(currentModel, true);
+            
+            if (intersects.length > 0) {
+                // YA, SENTUHAN MENGENAI MODEL!
+                gestureState.mode = 'pan';
+                gestureState.isInteracting = true;
+                gestureState.isPanning = true; 
+                
+                // Lepaskan dari jangkar lama agar bisa bergerak
+                if (placed.length > 0) {
+                    placed[0].anchorSpace = null; // Lepaskan!
+                }
+            }
         }
-        // ---
         
-    } else if (touches.length === 2) {
+    } else if (touches.length === 2 && currentModel) {
+        // --- 2 Jari: Mulai Scale & Rotate ---
         gestureState.mode = 'scale-rotate';
         gestureState.isInteracting = true;
         gestureState.isPanning = false; 
@@ -454,21 +473,26 @@ function onTouchStart(event) {
 }
 
 function onTouchMove(event) {
-    if (!xrSession || !gestureState.isInteracting || !currentModel || !groupPlaced) return;
+    if (!xrSession || !gestureState.isInteracting || !groupPlaced) return;
 
     event.preventDefault();
     const touches = event.touches;
 
     if (gestureState.mode === 'pan' && touches.length === 1) {
         // Logika pemindahan (pan) ada di renderXR()
-    } else if (gestureState.mode === 'scale-rotate' && touches.length === 2) {
+        // Kita hanya perlu set flag, yang sudah diatur di onTouchStart
+
+    } else if (gestureState.mode === 'scale-rotate' && touches.length === 2 && currentModel) {
+        // --- 2 Jari: Hitung Skala & Rotasi ---
         const dx = touches[0].pageX - touches[1].pageX;
         const dy = touches[0].pageY - touches[1].pageY;
 
+        // Hitung Skala (Pinch)
         const newDistance = Math.sqrt(dx * dx + dy * dy);
         const newScale = (newDistance / gestureState.initialTouchDistance) * gestureState.lastScale;
         currentModel.scale.set(newScale, newScale, newScale);
 
+        // Hitung Rotasi (Twist)
         const newAngle = Math.atan2(dy, dx);
         const deltaAngle = newAngle - gestureState.initialTouchAngle;
         currentModel.rotation.y = gestureState.lastRotation + deltaAngle;
@@ -478,18 +502,18 @@ function onTouchMove(event) {
 function onTouchEnd(event) {
     if (!xrSession) return;
     
-    // --- REVISI 3: Buat jangkar baru setelah panning ---
+    // --- REVISI: Buat jangkar baru setelah panning ---
     if (gestureState.isPanning && lastXRFrame && placedAnchor && hitTestSource) {
-        // Ambil hit-test terakhir dari frame terakhir
+        // Ambil hit-test terakhir dari frame terakhir (pusat layar)
         const results = lastXRFrame.getHitTestResults(hitTestSource);
         if (results.length > 0) {
             const hit = results[0];
-            // Buat anchor baru di posisi drop
+            // Buat anchor baru di posisi 'drop'
             hit.createAnchor().then(anchor => {
                 if (placed.length > 0) {
-                    placed[0].anchorSpace = anchor.anchorSpace; // Attach ke anchor baru
+                    placed[0].anchorSpace = anchor.anchorSpace; // Kunci ke anchor baru
                     
-                    // Paksa update matrix ke anchor baru
+                    // Paksa update matrix ke anchor baru (untuk frame ini)
                     const pose = lastXRFrame.getPose(anchor.anchorSpace, refSpace);
                     if (pose) {
                         placed[0].mesh.matrix.fromArray(pose.transform.matrix);
@@ -497,7 +521,6 @@ function onTouchEnd(event) {
                 }
             }).catch(err => {
                 console.error("Gagal membuat anchor baru setelah pan:", err);
-                // Jika gagal, biarkan saja di posisi terakhir (tanpa anchor)
             });
         }
     }
@@ -517,11 +540,8 @@ function onTouchEnd(event) {
     gestureState.touchCount = event.touches.length;
     
     if (groupPlaced && currentModel && event.touches.length === 1) {
-        onTouchStart({ 
-            touches: event.touches, 
-            preventDefault: () => {}, 
-            target: event.target 
-        });
+        // Kita tidak re-initialize pan di sini lagi,
+        // pengguna harus mengangkat jari dan menyentuh objek lagi.
     }
 }
 // --- AKHIR FUNGSI GESTUR ---
