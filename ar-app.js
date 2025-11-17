@@ -37,10 +37,8 @@ const gestureState = {
     isInteracting: false,
     mode: null, // 'pan', 'scale-rotate'
     
-    // Untuk 1-Jari Pan (Move)
-    isPanning: false, // <-- REVISI: Flag khusus untuk panning
+    isPanning: false, 
 
-    // Untuk 2-Jari Scale/Rotate
     lastScale: 1,
     lastRotation: 0,
     initialTouchDistance: 0,
@@ -75,13 +73,14 @@ function init() {
   dirLight.position.set(1, 1.5, 0.5);
   scene.add(dirLight);
 
+  // Muat Penlight untuk fallback
   const modelPath = './assets/penlight-compressed.glb'; 
   loader.load(modelPath, (gltf) => {
       modelPrefab = gltf.scene;
       modelPrefab.scale.set(0.5, 0.5, 0.5); 
       modelPrefab.position.set(0, 1, -2); 
       modelPrefab.name = 'AlatMedis_Prefab';
-  }, undefined, (e) => console.error(`Gagal load ${modelPath}`, e));
+  }, undefined, (e) => console.error(`Gagal load ${modelPath}`));
 
   // Ambil referensi ke panel info
   infoPanel = document.getElementById('info-panel');
@@ -167,18 +166,11 @@ async function onSessionStart() {
   scene.add(arRoot);
 
   // --- REVISI: Hapus 'selectstart' untuk menghindari konflik tap/pan ---
-  // xrSession.addEventListener('selectstart', onSelectLike); // <-- DIHAPUS
   xrSession.addEventListener('select', onSelectLike); // <-- TETAP ADA (untuk tap)
   // ---
 
   controller = renderer.xr.getController(0);
   scene.add(controller);
-
-  // Hapus listener DOM fallback
-  // const domOpts = { passive: true };
-  // renderer.domElement.addEventListener('pointerup', domSelectFallback, domOpts);
-  // renderer.domElement.addEventListener('click', domSelectFallback, domOpts);
-  // renderer.domElement.addEventListener('touchend', domSelectFallback, domOpts);
 
   reticle = createReticle();
   scene.add(reticle);
@@ -243,9 +235,7 @@ function renderXR(time, frame) {
   if (!refSpace) refSpace = renderer.xr.getReferenceSpace?.() || refSpace;
 
   // --- REVISI: Logika Panning (Move) 1-Jari ---
-  // Kita lakukan hit-test di dalam render loop untuk memindahkan objek
   if (gestureState.isPanning && groupPlaced && placedAnchor) {
-      // Gunakan hit-test yang sama dengan reticle
       const results = frame.getHitTestResults(hitTestSource); 
       
       if (results.length > 0) {
@@ -294,22 +284,23 @@ function renderXR(time, frame) {
     }
   }
 
-  renderer.render(scene, renderer.xr.getCamera(camera));
+  renderer.render(scene, camera);
 }
 
 // ===== Interaksi =====
 function onSelectLike(event) {
-  // --- REVISI: Jangan lakukan apa-apa jika event ini BUKAN tap (misal, dari controller)
+  // --- REVISI: Panggil onSelect HANYA jika kita TIDAK sedang gestur ---
+  // Ini adalah perbaikan utama untuk video Anda
+  if (gestureState.isInteracting) return;
+  
+  // Hanya proses jika event ini dari 'select' (tap layar)
   if (event.type === 'select' && event.inputSource.targetRayMode === 'screen') {
-      // Ini adalah 'select' dari layar (tap), panggil onSelect()
       onSelect();
   }
-  // Abaikan 'select' dari controller jika ada
 }
 
 async function onSelect() {
-  // --- REVISI: Logika tap HANYA untuk menempatkan anchor ---
-  if (gestureState.isInteracting) return; // Jangan tempatkan jika sedang gestur
+  // gestureState.isInteracting sudah dicek di onSelectLike
   if (!reticle || !reticle.visible || groupPlaced) return; 
 
   const now = performance.now();
@@ -348,7 +339,7 @@ async function onSelect() {
   }
 }
 
-// --- FUNGSI BARU: Logika Sidebar ---
+// --- FUNGSI Logika Sidebar ---
 function populateAssetList() {
   assetListContainer.innerHTML = ''; 
   if (typeof ALAT_MEDIS_DATA === 'undefined') {
@@ -431,7 +422,7 @@ function exitAR() {
 // --- GESTUR: FUNGSI HANDLER SENTUHAN ---
 
 function onTouchStart(event) {
-    // --- REVISI: Hanya jalankan gestur JIKA anchor sudah ditempatkan ---
+    // REVISI: Hanya jalankan gestur JIKA anchor sudah ditempatkan DAN ada model
     if (!xrSession || !groupPlaced || !currentModel) return;
 
     // Cek apakah sentuhan di atas UI, jika ya, abaikan gestur
@@ -444,16 +435,16 @@ function onTouchStart(event) {
     gestureState.touchCount = touches.length;
 
     if (touches.length === 1) {
-        // --- 1 Jari: Mulai Panning (Move) ---
+        // 1 Jari: Mulai Panning (Move)
         gestureState.mode = 'pan';
         gestureState.isInteracting = true;
-        gestureState.isPanning = true; // Flag khusus untuk render loop
+        gestureState.isPanning = true; 
         
     } else if (touches.length === 2) {
-        // --- 2 Jari: Mulai Scale & Rotate ---
+        // 2 Jari: Mulai Scale & Rotate
         gestureState.mode = 'scale-rotate';
         gestureState.isInteracting = true;
-        gestureState.isPanning = false; // Pastikan tidak panning
+        gestureState.isPanning = false; 
 
         const dx = touches[0].pageX - touches[1].pageX;
         const dy = touches[0].pageY - touches[1].pageY;
@@ -467,19 +458,16 @@ function onTouchStart(event) {
 }
 
 function onTouchMove(event) {
-    // --- REVISI: Guard ---
     if (!xrSession || !gestureState.isInteracting || !currentModel || !groupPlaced) return;
 
     event.preventDefault();
     const touches = event.touches;
 
     if (gestureState.mode === 'pan' && touches.length === 1) {
-        // --- 1 Jari: Panning (Move) ---
-        // Logika pemindahan aktual ada di renderXR()
-        // Kita hanya perlu set flag, yang sudah diatur di onTouchStart
+        // Logika pemindahan (pan) ada di renderXR()
 
     } else if (gestureState.mode === 'scale-rotate' && touches.length === 2) {
-        // --- 2 Jari: Hitung Skala & Rotasi ---
+        // 2 Jari: Hitung Skala & Rotasi
         const dx = touches[0].pageX - touches[1].pageX;
         const dy = touches[0].pageY - touches[1].pageY;
 
@@ -498,7 +486,6 @@ function onTouchMove(event) {
 function onTouchEnd(event) {
     if (!xrSession) return;
     
-    // Cek jika kita baru saja melepas jari terakhir
     if (gestureState.isInteracting && event.touches.length === 0) {
         if (currentModel) {
             gestureState.lastScale = currentModel.scale.x;
@@ -508,13 +495,11 @@ function onTouchEnd(event) {
     
     // Reset status
     gestureState.isInteracting = false;
-    gestureState.isPanning = false; // <-- REVISI
+    gestureState.isPanning = false;
     gestureState.mode = null;
     gestureState.touchCount = event.touches.length;
     
-    // Jika masih ada 1 jari tersisa (misal, dari 2 jadi 1),
-    // kita re-initialize untuk panning
-    if (groupPlaced && event.touches.length === 1) {
+    if (groupPlaced && currentModel && event.touches.length === 1) {
         // Buat event palsu untuk memulai ulang 'pan'
         onTouchStart({ 
             touches: event.touches, 
@@ -525,8 +510,5 @@ function onTouchEnd(event) {
 }
 // --- AKHIR FUNGSI GESTUR ---
 
-// --- REVISI: Hapus fungsi ini ---
-function domSelectFallback(e) {
-  // if (e.target?.closest?.('.xr-btn')) return;
-  // if (renderer.xr.isPresenting) onSelect();
-}
+// Hapus fungsi ini
+// function domSelectFallback(e) {}
