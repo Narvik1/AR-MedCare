@@ -153,8 +153,8 @@ async function onSessionStart() {
   document.getElementById('overlayRoot').classList.add('ar-active');
   
   if (infoPanel) 
-      infoPanel.textContent = "Perhatian"
-      infoDesc.textContent = "Pastikan permukaan lantai tidak memantulkan cahaya berlebihan dan Anda berada di ruangan yang memiliki cukup pencahayaan."
+      infoPanel.textContent = "Perhatian";
+      infoDesc.textContent = "Pastikan permukaan lantai tidak memantulkan cahaya berlebihan dan Anda berada di ruangan yang memiliki cukup pencahayaan.";
       infoPanel.style.display = 'block'; 
   
   if (scanOverlay) scanOverlay.style.display = 'flex'; 
