@@ -118,9 +118,9 @@ function init() {
   renderer.xr.addEventListener('sessionend', onSessionEnd);
 
   // --- GESTUR: Tambahkan event listener untuk sentuhan ---
-  renderer.domElement.addEventListener('touchstart', onTouchStart, { passive: false });
-  renderer.domElement.addEventListener('touchmove', onTouchMove, { passive: false });
-  renderer.domElement.addEventListener('touchend', onTouchEnd, { passive: false });
+    window.addEventListener('touchstart', onTouchStart, { passive: false });
+    window.addEventListener('touchmove', onTouchMove, { passive: false });
+    window.addEventListener('touchend', onTouchEnd, { passive: false });
   // ---
 }
 
