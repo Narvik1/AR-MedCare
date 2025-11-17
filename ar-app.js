@@ -10,28 +10,42 @@ let controller;
 let reticle;
 let hitTestSource = null, hitCancel = null;
 let xrSession = null;
-let arRoot = null; // Grup untuk menampung objek AR
+let arRoot = null; 
 let lastSpawnTs = 0;
 
 let refSpace = null;
 let lastXRFrame = null;
 let lastHit = null;
-const placed = []; // Array untuk anchor yang ditempatkan
+const placed = []; 
 
-// --- Logika Baru untuk Sidebar ---
 const loader = new GLTFLoader();
-const modelCache = {};      // Cache untuk model yang sudah di-load
-let placedAnchor = null;    // Satu anchor (jangkar) di lantai
-let currentModel = null;    // Model yang sedang ditampilkan
-let groupPlaced = false;    // Status apakah anchor sudah ditempatkan
-let modelPrefab = null;     // Model untuk fallback (Foto 2)
-let hasFoundPlaneOnce = false; // Untuk overlay
-// ---
+const modelCache = {};      
+let placedAnchor = null;    
+let currentModel = null;    
+let groupPlaced = false;    
+let modelPrefab = null;     
+let hasFoundPlaneOnce = false; 
 
 // Referensi UI
 let infoPanel, infoTitle, infoDesc;
 let sidebarMenu, assetListContainer, btnAssets, btnInfoToggle, btnExitAr;
-let scanOverlay; // Untuk instruksi pindai
+let scanOverlay; 
+
+// --- GESTUR: Variabel untuk melacak status sentuhan ---
+const gestureState = {
+    touchCount: 0,
+    isInteracting: false,
+    mode: null, // 'pan', 'scale-rotate'
+    
+    // Untuk 1-Jari Pan (Move)
+    isPanning: false, // <-- REVISI: Flag khusus untuk panning
+
+    // Untuk 2-Jari Scale/Rotate
+    lastScale: 1,
+    lastRotation: 0,
+    initialTouchDistance: 0,
+    initialTouchAngle: 0
+};
 // ---
 
 // ===== Bootstrap =====
@@ -49,12 +63,8 @@ function init() {
   document.body.appendChild(renderer.domElement);
 
   scene = new THREE.Scene();
-  
-  // --- Latar belakang sekarang di-handle oleh CSS ---
-  // Kita buat scene transparan agar CSS terlihat
   scene.background = null; 
-  renderer.setClearAlpha(0); // <-- Tambahkan ini
-  // ---
+  renderer.setClearAlpha(0); 
 
   camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 50);
   camera.position.set(0, 1.6, 0); 
@@ -65,35 +75,30 @@ function init() {
   dirLight.position.set(1, 1.5, 0.5);
   scene.add(dirLight);
 
-  // --- Muat Penlight untuk fallback (Foto 2) ---
   const modelPath = './assets/penlight-compressed.glb'; 
   loader.load(modelPath, (gltf) => {
       modelPrefab = gltf.scene;
       modelPrefab.scale.set(0.5, 0.5, 0.5); 
-      modelPrefab.position.set(0, 1, -2); // Atur posisi fallback
+      modelPrefab.position.set(0, 1, -2); 
       modelPrefab.name = 'AlatMedis_Prefab';
-      // Jangan tambahkan ke scene dulu, tambahkan di animateFallback
   }, undefined, (e) => console.error(`Gagal load ${modelPath}`, e));
-  // ---
 
   // Ambil referensi ke panel info
   infoPanel = document.getElementById('info-panel');
   infoTitle = document.getElementById('info-title');
   infoDesc = document.getElementById('info-desc');
-  scanOverlay = document.getElementById('scan-overlay'); // <-- Referensi overlay
+  scanOverlay = document.getElementById('scan-overlay');
   
-  // --- Implementasi Sidebar (FOTO 3 & 4) ---
+  // Implementasi Sidebar
   sidebarMenu = document.getElementById('sidebar-menu');
   assetListContainer = document.getElementById('asset-list-container');
   btnAssets = document.getElementById('btn-assets');
   btnInfoToggle = document.getElementById('btn-info-toggle');
   btnExitAr = document.getElementById('btn-exit-ar');
 
-  // Tambahkan event listener
   btnAssets.addEventListener('click', toggleAssetList);
   btnInfoToggle.addEventListener('click', toggleInfoPanel);
   btnExitAr.addEventListener('click', exitAR);
-  // ---
 
   window.addEventListener('resize', () => {
     camera.aspect = window.innerWidth / window.innerHeight;
@@ -112,6 +117,12 @@ function init() {
 
   renderer.xr.addEventListener('sessionstart', onSessionStart);
   renderer.xr.addEventListener('sessionend', onSessionEnd);
+
+  // --- GESTUR: Tambahkan event listener untuk sentuhan ---
+  renderer.domElement.addEventListener('touchstart', onTouchStart, { passive: false });
+  renderer.domElement.addEventListener('touchmove', onTouchMove, { passive: false });
+  renderer.domElement.addEventListener('touchend', onTouchEnd, { passive: false });
+  // ---
 }
 
 function animateFallback() {
@@ -119,8 +130,8 @@ function animateFallback() {
   requestAnimationFrame(animateFallback);
   
   if (modelPrefab) {
-      if(modelPrefab.parent !== scene) scene.add(modelPrefab); // Tambahkan jika belum ada
-      modelPrefab.rotation.y += 0.01; // Rotasi otomatis
+      if(modelPrefab.parent !== scene) scene.add(modelPrefab); 
+      modelPrefab.rotation.y += 0.01; 
   }
   
   renderer.render(scene, camera);
@@ -135,13 +146,12 @@ async function onSessionStart() {
   lastHit = null;
   placed.length = 0; 
   groupPlaced = false; 
-  hasFoundPlaneOnce = false; // Reset flag overlay
+  hasFoundPlaneOnce = false;
 
-  if (modelPrefab) scene.remove(modelPrefab); // Hapus prefab dari scene
+  if (modelPrefab) scene.remove(modelPrefab); 
 
   document.getElementById('overlayRoot').classList.add('ar-active');
   
-  // Tampilkan overlay pemindaian, sembunyikan panel info
   if (infoPanel) infoPanel.style.display = 'none'; 
   if (scanOverlay) scanOverlay.style.display = 'flex'; 
 
@@ -156,17 +166,19 @@ async function onSessionStart() {
   arRoot.name = 'ar-session-root';
   scene.add(arRoot);
 
-  xrSession.addEventListener('selectstart', onSelectLike);
-  xrSession.addEventListener('select', onSelectLike);
+  // --- REVISI: Hapus 'selectstart' untuk menghindari konflik tap/pan ---
+  // xrSession.addEventListener('selectstart', onSelectLike); // <-- DIHAPUS
+  xrSession.addEventListener('select', onSelectLike); // <-- TETAP ADA (untuk tap)
+  // ---
 
   controller = renderer.xr.getController(0);
-  controller.addEventListener('selectstart', onSelectLike);
-  controller.addEventListener('select', onSelectLike);
   scene.add(controller);
 
-  // Hapus listener DOM fallback yang lama
+  // Hapus listener DOM fallback
   // const domOpts = { passive: true };
-  // ...
+  // renderer.domElement.addEventListener('pointerup', domSelectFallback, domOpts);
+  // renderer.domElement.addEventListener('click', domSelectFallback, domOpts);
+  // renderer.domElement.addEventListener('touchend', domSelectFallback, domOpts);
 
   reticle = createReticle();
   scene.add(reticle);
@@ -188,7 +200,6 @@ function onSessionEnd() {
 
   document.getElementById('overlayRoot').classList.remove('ar-active');
   
-  // Sembunyikan semua UI AR
   if (infoPanel) infoPanel.style.display = 'none';
   if (scanOverlay) scanOverlay.style.display = 'none';
   sidebarMenu.style.display = 'none';
@@ -205,13 +216,8 @@ function onSessionEnd() {
 
   placed.length = 0; 
   groupPlaced = false;
-  
-  // Hapus listener DOM
-  // ...
 
   if (controller) {
-    controller.removeEventListener('selectstart', onSelectLike);
-    controller.removeEventListener('select', onSelectLike);
     scene.remove(controller);
     controller = null;
   }
@@ -236,37 +242,55 @@ function renderXR(time, frame) {
   const session = frame.session;
   if (!refSpace) refSpace = renderer.xr.getReferenceSpace?.() || refSpace;
 
+  // --- REVISI: Logika Panning (Move) 1-Jari ---
+  // Kita lakukan hit-test di dalam render loop untuk memindahkan objek
+  if (gestureState.isPanning && groupPlaced && placedAnchor) {
+      // Gunakan hit-test yang sama dengan reticle
+      const results = frame.getHitTestResults(hitTestSource); 
+      
+      if (results.length > 0) {
+          const pose = results[0].getPose(refSpace);
+          if (pose) {
+              placedAnchor.matrix.fromArray(pose.transform.matrix);
+              placedAnchor.matrixAutoUpdate = false;
+              placedAnchor.updateMatrixWorld(true);
+          }
+      }
+  }
+  // ---
+
   const haveReticle = updateReticle(reticle, frame, hitTestSource, refSpace);
   
-  if (!haveReticle || groupPlaced) { 
+  if (!haveReticle || groupPlaced || gestureState.isInteracting) { // Sembunyikan reticle saat gestur
     lastHit = null;
     if(reticle) reticle.visible = false;
   } else {
-    // --- Logika untuk menyembunyikan overlay ---
     if (hasFoundPlaneOnce === false) {
         hasFoundPlaneOnce = true;
-        if (scanOverlay) scanOverlay.style.display = 'none'; // Sembunyikan instruksi pindai
+        if (scanOverlay) scanOverlay.style.display = 'none'; 
         
-        // Tampilkan instruksi "Ketuk"
         if (infoPanel) {
             infoTitle.textContent = "Lantai Terdeteksi";
             infoDesc.textContent = "Ketuk untuk menempatkan alat.";
             infoPanel.style.display = 'block';
         }
     }
-    // ---
     
     const results = frame.getHitTestResults(hitTestSource);
     if (results.length) lastHit = results[0];
   }
 
+  // Update posisi anchor
   for (const p of placed) {
     if (!p.anchorSpace) continue;
-    const apose = frame.getPose(p.anchorSpace, refSpace);
-    if (apose) {
-      p.mesh.matrix.fromArray(apose.transform.matrix);
-      p.mesh.matrixAutoUpdate = false;
-      p.mesh.updateMatrixWorld(true);
+    // --- REVISI: Jangan update anchor jika kita sedang memindahkannya (pan) ---
+    if (!gestureState.isPanning) { 
+        const apose = frame.getPose(p.anchorSpace, refSpace);
+        if (apose) {
+          p.mesh.matrix.fromArray(apose.transform.matrix);
+          p.mesh.matrixAutoUpdate = false;
+          p.mesh.updateMatrixWorld(true);
+        }
     }
   }
 
@@ -274,15 +298,25 @@ function renderXR(time, frame) {
 }
 
 // ===== Interaksi =====
-function onSelectLike() { onSelect(); }
+function onSelectLike(event) {
+  // --- REVISI: Jangan lakukan apa-apa jika event ini BUKAN tap (misal, dari controller)
+  if (event.type === 'select' && event.inputSource.targetRayMode === 'screen') {
+      // Ini adalah 'select' dari layar (tap), panggil onSelect()
+      onSelect();
+  }
+  // Abaikan 'select' dari controller jika ada
+}
 
 async function onSelect() {
-  if (scanOverlay) scanOverlay.style.display = 'none'; // Sembunyikan overlay jika masih ada
+  // --- REVISI: Logika tap HANYA untuk menempatkan anchor ---
+  if (gestureState.isInteracting) return; // Jangan tempatkan jika sedang gestur
   if (!reticle || !reticle.visible || groupPlaced) return; 
 
   const now = performance.now();
   if (now - lastSpawnTs < 160) return;
   lastSpawnTs = now;
+
+  if (scanOverlay) scanOverlay.style.display = 'none'; 
 
   let anchored = false;
   try {
@@ -309,71 +343,59 @@ async function onSelect() {
     if (infoPanel) {
       infoTitle.textContent = "Pilih Alat Medis";
       infoDesc.textContent = "Silakan pilih alat medis dari menu di sebelah kiri.";
-      infoPanel.style.display = 'block'; // Pastikan panel info terlihat
+      infoPanel.style.display = 'block';
     }
   }
 }
 
 // --- FUNGSI BARU: Logika Sidebar ---
-
 function populateAssetList() {
   assetListContainer.innerHTML = ''; 
-
   if (typeof ALAT_MEDIS_DATA === 'undefined') {
-    console.error("Data alat medis (ALAT_MEDIS_DATA) tidak ditemukan. Pastikan file alat-medis-data.js sudah dimuat.");
+    console.error("Data alat medis (ALAT_MEDIS_DATA) tidak ditemukan.");
     return;
   }
-
   for (const key in ALAT_MEDIS_DATA) {
     const data = ALAT_MEDIS_DATA[key];
     const button = document.createElement('button');
     button.textContent = data.nama;
     button.dataset.key = key; 
-    
     button.addEventListener('click', () => {
       loadModel(key);
-      assetListContainer.style.display = 'none'; // Tutup menu
+      assetListContainer.style.display = 'none'; 
     });
-    
     assetListContainer.appendChild(button);
   }
 }
 
 function loadModel(key) {
   if (!placedAnchor) return; 
-
   const data = ALAT_MEDIS_DATA[key];
   if (!data) return;
-
   if (currentModel) {
     placedAnchor.remove(currentModel);
     currentModel = null; 
   }
-
   if (infoPanel) {
     infoTitle.textContent = data.nama;
     infoDesc.textContent = data.deskripsi;
   }
   
-  // --- Logika Skala Otomatis ---
   const setupModel = (model) => {
     const box = new THREE.Box3().setFromObject(model);
     const center = box.getCenter(new THREE.Vector3());
     const size = box.getSize(new THREE.Vector3());
     const maxDim = Math.max(size.x, size.y, size.z);
-    
-    // Atur skala agar sisi terpanjangnya 0.5 meter (50cm)
     const scale = 0.5 / maxDim; 
     model.scale.set(scale, scale, scale);
-    
-    // Pindahkan model agar pivot-nya di tengah lantai
     model.position.sub(center);
-    model.position.y -= (size.y * scale / 2); // Model "duduk" di lantai
-
+    model.position.y -= (size.y * scale / 2); 
     currentModel = model;
     placedAnchor.add(currentModel);
+    // Simpan skala & rotasi awal untuk gestur
+    gestureState.lastScale = currentModel.scale.x;
+    gestureState.lastRotation = currentModel.rotation.y;
   };
-  // ---
 
   if (modelCache[key]) {
     const cachedModel = modelCache[key].clone();
@@ -394,13 +416,11 @@ function toggleAssetList() {
   const isVisible = assetListContainer.style.display === 'block';
   assetListContainer.style.display = isVisible ? 'none' : 'block';
 }
-
 function toggleInfoPanel() {
   if (!infoPanel) return;
   const isVisible = infoPanel.style.display === 'block';
   infoPanel.style.display = isVisible ? 'none' : 'block';
 }
-
 function exitAR() {
   if (xrSession) {
     xrSession.end();
@@ -408,7 +428,105 @@ function exitAR() {
 }
 // ---
 
+// --- GESTUR: FUNGSI HANDLER SENTUHAN ---
+
+function onTouchStart(event) {
+    // --- REVISI: Hanya jalankan gestur JIKA anchor sudah ditempatkan ---
+    if (!xrSession || !groupPlaced || !currentModel) return;
+
+    // Cek apakah sentuhan di atas UI, jika ya, abaikan gestur
+    if (event.target.closest('#sidebar-menu, #asset-list-container, #info-panel, .ui-btn')) {
+        return;
+    }
+
+    event.preventDefault();
+    const touches = event.touches;
+    gestureState.touchCount = touches.length;
+
+    if (touches.length === 1) {
+        // --- 1 Jari: Mulai Panning (Move) ---
+        gestureState.mode = 'pan';
+        gestureState.isInteracting = true;
+        gestureState.isPanning = true; // Flag khusus untuk render loop
+        
+    } else if (touches.length === 2) {
+        // --- 2 Jari: Mulai Scale & Rotate ---
+        gestureState.mode = 'scale-rotate';
+        gestureState.isInteracting = true;
+        gestureState.isPanning = false; // Pastikan tidak panning
+
+        const dx = touches[0].pageX - touches[1].pageX;
+        const dy = touches[0].pageY - touches[1].pageY;
+        
+        gestureState.initialTouchDistance = Math.sqrt(dx * dx + dy * dy);
+        gestureState.initialTouchAngle = Math.atan2(dy, dx);
+        
+        gestureState.lastScale = currentModel.scale.x;
+        gestureState.lastRotation = currentModel.rotation.y;
+    }
+}
+
+function onTouchMove(event) {
+    // --- REVISI: Guard ---
+    if (!xrSession || !gestureState.isInteracting || !currentModel || !groupPlaced) return;
+
+    event.preventDefault();
+    const touches = event.touches;
+
+    if (gestureState.mode === 'pan' && touches.length === 1) {
+        // --- 1 Jari: Panning (Move) ---
+        // Logika pemindahan aktual ada di renderXR()
+        // Kita hanya perlu set flag, yang sudah diatur di onTouchStart
+
+    } else if (gestureState.mode === 'scale-rotate' && touches.length === 2) {
+        // --- 2 Jari: Hitung Skala & Rotasi ---
+        const dx = touches[0].pageX - touches[1].pageX;
+        const dy = touches[0].pageY - touches[1].pageY;
+
+        // Hitung Skala (Pinch)
+        const newDistance = Math.sqrt(dx * dx + dy * dy);
+        const newScale = (newDistance / gestureState.initialTouchDistance) * gestureState.lastScale;
+        currentModel.scale.set(newScale, newScale, newScale);
+
+        // Hitung Rotasi (Twist)
+        const newAngle = Math.atan2(dy, dx);
+        const deltaAngle = newAngle - gestureState.initialTouchAngle;
+        currentModel.rotation.y = gestureState.lastRotation + deltaAngle;
+    }
+}
+
+function onTouchEnd(event) {
+    if (!xrSession) return;
+    
+    // Cek jika kita baru saja melepas jari terakhir
+    if (gestureState.isInteracting && event.touches.length === 0) {
+        if (currentModel) {
+            gestureState.lastScale = currentModel.scale.x;
+            gestureState.lastRotation = currentModel.rotation.y;
+        }
+    }
+    
+    // Reset status
+    gestureState.isInteracting = false;
+    gestureState.isPanning = false; // <-- REVISI
+    gestureState.mode = null;
+    gestureState.touchCount = event.touches.length;
+    
+    // Jika masih ada 1 jari tersisa (misal, dari 2 jadi 1),
+    // kita re-initialize untuk panning
+    if (groupPlaced && event.touches.length === 1) {
+        // Buat event palsu untuk memulai ulang 'pan'
+        onTouchStart({ 
+            touches: event.touches, 
+            preventDefault: () => {}, 
+            target: event.target 
+        });
+    }
+}
+// --- AKHIR FUNGSI GESTUR ---
+
+// --- REVISI: Hapus fungsi ini ---
 function domSelectFallback(e) {
-  if (e.target?.closest?.('.xr-btn')) return;
-  if (renderer.xr.isPresenting) onSelect();
+  // if (e.target?.closest?.('.xr-btn')) return;
+  // if (renderer.xr.isPresenting) onSelect();
 }
