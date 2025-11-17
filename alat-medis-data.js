@@ -14,7 +14,7 @@ const ALAT_MEDIS_DATA = {
         deskripsi: 'Gunting medis digunakan untuk memotong perban, kasa, pakaian pasien, atau material medis lainnya.'
     },
     'kasa': {
-        nama: '222 Kasa (Gauze)',
+        nama: '444 Kasa (Gauze)',
         path: './assets/kasa-compressed.glb',
         deskripsi: 'Kasa adalah bahan medis berpori yang digunakan untuk menyerap darah, membersihkan luka, atau menjadi bantalan sebelum dibalut perban.'
     },
