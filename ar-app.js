@@ -153,7 +153,7 @@ async function onSessionStart() {
   document.getElementById('overlayRoot').classList.add('ar-active');
   
   if (infoPanel) 
-      infoPanel.textContent = "Perhatian";
+      infoTitle.textContent = "Perhatian";
       infoDesc.textContent = "Pastikan permukaan lantai tidak memantulkan cahaya berlebihan dan Anda berada di ruangan yang memiliki cukup pencahayaan.";
       infoPanel.style.display = 'block'; 
   
