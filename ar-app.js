@@ -354,7 +354,7 @@ async function onSelect() {
     sidebarMenu.style.display = 'flex';
     if (infoPanel) {
       infoTitle.textContent = "Instruksi";
-      infoDesc.textContent = "Tombol + untuk menambahkan objek.\n Tombol i untuk menampilkan informasi. \n Tombol ← untuk kembali ke menu Utama.>";
+      infoDesc.textContent = "Tombol + untuk menambahkan objek.\nTombol i untuk menampilkan informasi.\nTombol ← untuk kembali ke menu Utama.";
       infoPanel.style.display = 'block';
     }
   }

@@ -425,7 +425,7 @@ body.ar-viewer-page .xr-btn.exit {
 
 @media only screen and (max-width: 768px) {
     body {
-        background-size: 100% auto; 
+        background-size: 150% auto !important; 
         background-position: top center;
         background-repeat: no-repeat;
         background-color: #4cd9a4; 
@@ -434,7 +434,9 @@ body.ar-viewer-page .xr-btn.exit {
     
     /* Opsional: Menyesuaikan jarak tombol agar tidak menumpuk gambar */
     .container {
-        width: 100%;
+        width: 70%;
+        margin-left: auto;
+        margin-right: auto;
         margin-top: 80vw; 
         padding-bottom: 50px;
         margin-top: 400px; /* Sesuaikan angka ini */
