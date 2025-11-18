@@ -242,6 +242,10 @@ body.ar-viewer-page .xr-btn.exit {
     box-sizing: border-box;
     z-index: 5;
 }
+#info-panel p, #info-desc {
+    /* Properti ini WAJIB ada agar \n berfungsi */
+    white-space: pre-wrap; 
+}
 .ar-active #info-panel {
     display: block; 
 }
@@ -421,28 +425,49 @@ body.ar-viewer-page .xr-btn.exit {
 
 @media only screen and (max-width: 768px) {
     body {
-        /* 1. Ubah ukuran background agar menyesuaikan LEBAR layar (bukan menutupi tinggi) */
-        /* Ini akan membuat efek "Zoom Out" sehingga seluruh lebar gambar terlihat */
         background-size: 100% auto; 
-
-        /* 2. Atur posisi gambar */
-        /* 'center' = tengah horizontal, '20%' = posisi vertikal dari atas */
-        /* Mainkan angka 20% ini (bisa 10%, 30%, dll) agar posisi suntikan pas dengan tombol */
-        background-position: center 25%;
-
-        /* 3. Jangan ulangi gambar */
+        background-position: top center;
         background-repeat: no-repeat;
-
-        /* 4. PENTING: Warna Pengisi */
-        /* Karena gambar dikecilkan, bagian bawah layar akan kosong. 
-           Anda HARUS menyamakan warna background CSS dengan warna hijau di gambar asli.
-           Ganti kode hex (#4cd9a4) di bawah dengan warna hijau yang sesuai gambar Anda. */
         background-color: #4cd9a4; 
+        align-items: flex-start; 
     }
     
     /* Opsional: Menyesuaikan jarak tombol agar tidak menumpuk gambar */
     .container {
-        /* Dorong tombol lebih ke bawah jika menutupi gambar */
+        width: 100%;
+        margin-top: 80vw; 
+        padding-bottom: 50px;
         margin-top: 400px; /* Sesuaikan angka ini */
     }
+}
+/* ======================================== */
+/* === STYLE TOMBOL KEMBALI DI QR OVERLAY === */
+/* ======================================== */
+
+.qr-back-btn {
+    position: absolute; /* Agar bebas diletakkan di mana saja dalam overlay */
+    top: 30px;          /* Jarak dari atas */
+    left: 30px;         /* Jarak dari kiri */
+    
+    /* Tampilan Tombol */
+    background-color: rgba(255, 0, 0, 0.9); /* Putih sedikit transparan */
+    color: #ffffff;        /* Warna teks gelap */
+    text-decoration: none; /* Hilangkan garis bawah link */
+    
+    padding: 10px 20px; /* Luas tombol */
+    border-radius: 30px; /* Membuat sudut bulat (capsule shape) */
+    font-weight: 600;
+    font-size: 16px;
+    
+    /* Efek Bayangan agar timbul */
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    
+    z-index: 10002; /* Pastikan tombol ada di lapisan paling atas */
+    transition: transform 0.2s ease, background 0.2s;
+}
+
+.qr-back-btn:hover {
+    transform: scale(1.05); /* Efek membesar saat disorot */
+    background-color: #ffffff; /* Putih penuh saat hover */
+    cursor: pointer;
 }
