@@ -353,8 +353,8 @@ async function onSelect() {
   if (anchored) {
     sidebarMenu.style.display = 'flex';
     if (infoPanel) {
-      infoTitle.textContent = "Pilih Alat Medis";
-      infoDesc.textContent = "Silakan pilih alat medis dari ikon "+" pada menu sidebar di sebelah kiri.";
+      infoTitle.textContent = "Instruksi";
+      infoDesc.textContent = "Tombol + untuk menambahkan objek.\n Tombol i untuk menampilkan informasi. \n Tombol ← untuk kembali ke menu Utama.>";
       infoPanel.style.display = 'block';
     }
   }
