@@ -41,7 +41,7 @@ const ALAT_MEDIS_DATA = {
     'stethoscope': {
         nama: 'Stethoscope',
         path: './assets/stethoscope-compressed.glb',
-        deskripsi: 'Ini adalah deskripsi placeholder untuk Stethoscope.'
+        deskripsi: 'Stetoskop digunakan untuk mendengarkan bunyi tubuh seperti detak jantung, aliran darah, dan suara pernapasan. Memiliki chest piece, selang fleksibel, dan earpiece.'
     },
     'suntik': {
         nama: 'Suntik (Syringe)',

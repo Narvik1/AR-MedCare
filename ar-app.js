@@ -53,6 +53,27 @@ init();
 animateFallback();
 
 function init() {
+  const isMobile = /Mobile|Android|iPhone/i.test(navigator.userAgent);
+  // Jika BUKAN mobile (alias ini PC)
+  if (!isMobile) {
+      // Tampilkan overlay QR
+      const qrOverlay = document.getElementById('qr-overlay');
+      if (qrOverlay) {
+          qrOverlay.style.display = 'flex';
+      }
+      
+      // Sembunyikan tombol "Kembali" agar bersih
+      const backBtn = document.getElementById('backBtn');
+      if (backBtn) {
+          backBtn.style.display = 'none';
+      }
+      
+      // Hentikan eksekusi sisa skrip.
+      // Ini akan mencegah tombol AR dan model 3D (fallback) dimuat.
+      return; 
+  }
+  // --- AKHIR DETEKSI ---
+  
   const glCanvas = document.createElement('canvas');
   const gl = glCanvas.getContext('webgl', { antialias: true });
 

@@ -362,5 +362,48 @@ body.ar-viewer-page .xr-btn.exit {
         width: 200px;
     }
 }
+/* ======================================== */
+/* === 5. STYLE UNTUK QR CODE OVERLAY   === */
+/* ======================================== */
+
+#qr-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #ffffff; /* Latar belakang putih */
+  color: #333; /* Teks gelap */
+  
+  /* Sembunyikan secara default */
+  display: none; 
+  
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  
+  z-index: 10000; /* Tampil di atas segalanya */
+  pointer-events: auto;
+}
+
+#qr-overlay img {
+  width: 250px;
+  height: 250px;
+  background: #eee;
+  border-radius: 8px;
+  margin-bottom: 20px;
+}
+
+#qr-overlay h3 {
+  font-size: 1.8em;
+  margin: 0 0 10px 0;
+  font-weight: 600;
+}
+
+#qr-overlay p {
+  font-size: 1.1em;
+  margin: 0;
+}
 #asset-list-container button:hover { background: #0088ff; }
 #asset-list-container button:last-child { margin-bottom: 0; }
