@@ -375,10 +375,12 @@ body.ar-viewer-page .xr-btn.exit {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100%;
-  height: 100%;
-  background: #ffffff; /* Latar belakang putih */
-  color: #333; /* Teks gelap */
+  width: 100vw;
+  height: 100vh;
+  background-image: url('assets/barcode.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   
   /* Sembunyikan secara default */
   display: none; 
@@ -412,3 +414,35 @@ body.ar-viewer-page .xr-btn.exit {
 }
 #asset-list-container button:hover { background: #0088ff; }
 #asset-list-container button:last-child { margin-bottom: 0; }
+
+/* ======================================== */
+/* === KHUSUS TAMPILAN HP (RESPONSIF) === */
+/* ======================================== */
+
+@media only screen and (max-width: 768px) {
+    body {
+        /* 1. Ubah ukuran background agar menyesuaikan LEBAR layar (bukan menutupi tinggi) */
+        /* Ini akan membuat efek "Zoom Out" sehingga seluruh lebar gambar terlihat */
+        background-size: 100% auto; 
+
+        /* 2. Atur posisi gambar */
+        /* 'center' = tengah horizontal, '20%' = posisi vertikal dari atas */
+        /* Mainkan angka 20% ini (bisa 10%, 30%, dll) agar posisi suntikan pas dengan tombol */
+        background-position: center 25%;
+
+        /* 3. Jangan ulangi gambar */
+        background-repeat: no-repeat;
+
+        /* 4. PENTING: Warna Pengisi */
+        /* Karena gambar dikecilkan, bagian bawah layar akan kosong. 
+           Anda HARUS menyamakan warna background CSS dengan warna hijau di gambar asli.
+           Ganti kode hex (#4cd9a4) di bawah dengan warna hijau yang sesuai gambar Anda. */
+        background-color: #4cd9a4; 
+    }
+    
+    /* Opsional: Menyesuaikan jarak tombol agar tidak menumpuk gambar */
+    .container {
+        /* Dorong tombol lebih ke bawah jika menutupi gambar */
+        margin-top: 400px; /* Sesuaikan angka ini */
+    }
+}
