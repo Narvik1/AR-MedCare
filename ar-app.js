@@ -96,7 +96,7 @@ function init() {
   dirLight.position.set(1, 1.5, 0.5);
   scene.add(dirLight);
 
-  const modelPath = './assets/penlight-compressed.glb'; 
+  // const modelPath = './assets/penlight-compressed.glb'; 
   loader.load(modelPath, (gltf) => {
       modelPrefab = gltf.scene;
       modelPrefab.scale.set(0.5, 0.5, 0.5); 
